@@ -7,6 +7,7 @@ require 'stylesheet/functions'
 module Stylesheet
 
   class Compiler
+    COMPILE_TIMEOUT ||= 20
 
     def self.compile_asset(asset, options = {})
 
@@ -44,17 +45,19 @@ module Stylesheet
                                  color_scheme_id: options[:color_scheme_id],
                                  load_paths: [Stylesheet::Common::ASSET_ROOT])
 
-      result = engine.render
+      Timeout::timeout(COMPILE_TIMEOUT) {
+        result = engine.render
 
-      if options[:rtl]
-        require 'r2'
-        [R2.r2(result), nil]
-      else
-        source_map = engine.source_map
-        source_map.force_encoding("UTF-8")
+        if options[:rtl]
+          require 'r2'
+          [R2.r2(result), nil]
+        else
+          source_map = engine.source_map
+          source_map.force_encoding("UTF-8")
 
-        [result, source_map]
-      end
+          [result, source_map]
+        end
+      }
     end
   end
 end
